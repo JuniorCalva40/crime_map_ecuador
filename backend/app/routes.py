@@ -1,14 +1,43 @@
 from fastapi import APIRouter
 from fastapi.params import Query, Optional
+from enum import Enum
 from app.services import process_crime_data
+
+class WeaponType(str, Enum):
+    knife = "ARMA BLANCA"
+    firearm = "ARMA DE FUEGO"
+    others = "OTROS"
+
+class SexType(str, Enum):
+    male = "HOMBRE"
+    female = "MUJER"
 
 router = APIRouter()
 
 @router.get("/crime-data")
 async def get_crime_data(
-    sexo: Optional[str] = Query(None, alias="sexo"),
-    type_weapon: Optional[str] = Query(None, alias="tipo_arma"),
-    age_min: Optional[int] = Query(None, alias="edad_min"),
-    age_max: Optional[int] = Query(None, alias="edad_max")
+    gender: Optional[str] = Query(None, alias="gender"),
+    weapon: Optional[str] = Query(None, alias="weapon"),
+    age_min: Optional[int] = Query(None, alias="age_min"),
+    age_max: Optional[int] = Query(None, alias="age_max"),
+    year: Optional[int] = Query(None, description="Año para filtrar (ej: 2023)")
 ):
-    return process_crime_data()
+    weapon_value = None
+    gender_value = None
+    
+    if weapon:
+        weapon_map = {
+            "knife": "ARMA BLANCA",
+            "firearm": "ARMA DE FUEGO",
+            "others": "OTROS"
+        }
+        weapon_value = weapon_map.get(weapon.lower())
+    
+    if gender:
+        gender_map = {
+            "male": "HOMBRE",
+            "female": "MUJER"
+        }
+        gender_value = gender_map.get(gender.lower())
+    
+    return process_crime_data(gender_value, weapon_value, age_min, age_max, year)

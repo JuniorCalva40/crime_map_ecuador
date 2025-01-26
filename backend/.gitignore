@@ -40,7 +40,3 @@ ENV/
 
 # Model cache
 .cache/
-.transformers/
-
-# Processed images
-processed_images/ 
