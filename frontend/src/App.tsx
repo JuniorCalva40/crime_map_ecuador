@@ -4,9 +4,10 @@ import Filters from './components/Filters';
 
 export default function App() {
   const [filters, setFilters] = useState({
-    ageRange: [0, 80] as [number, number],
+    ageRange: [0, 100] as [number, number],
     gender: '',
     weapon: '',
+    year: '2024',
   });
 
   return (

@@ -1,9 +1,14 @@
 import pandas as pd
 
 
+def get_file_path(year):
+    if year == 2024:
+        return "data/crime_data_2024.xlsx"
+    return "data/data_crime_total.xlsx"
+
 def process_crime_data(gender, weapon, age_min, age_max, year=None):
     print(gender, weapon, age_min, age_max, year)
-    file_path = "data/crime_data.xlsx"
+    file_path = get_file_path(year)
     df = pd.read_excel(file_path)
 
     # Convertir fecha_infraccion a datetime
@@ -36,6 +41,8 @@ def process_crime_data(gender, weapon, age_min, age_max, year=None):
     victims_with_coordinates = len(valid_coordinates)
     victims_without_coordinates = total_victims - victims_with_coordinates
 
+    print()
+
     # Obtener solo las coordenadas válidas
     coordinates = valid_coordinates[['coordenada_y', 'coordenada_x']].values.tolist()
 
@@ -48,8 +55,8 @@ def process_crime_data(gender, weapon, age_min, age_max, year=None):
         "coordinates": coordinates
     }
 
-def get_location_details(latitude, longitude):
-    file_path = "data/crime_data.xlsx"
+def get_location_details(latitude, longitude, year=None):
+    file_path = get_file_path(year)
     df = pd.read_excel(file_path)
     
     # Buscar crímenes en las coordenadas exactas

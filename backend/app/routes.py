@@ -47,6 +47,7 @@ async def get_crime_data(
 @router.get("/crime-data/details-by-location")
 async def get_crime_details_by_location(
     latitude: float = Query(..., description="Latitud de la ubicación"),
-    longitude: float = Query(..., description="Longitud de la ubicación")
+    longitude: float = Query(..., description="Longitud de la ubicación"),
+    year: Optional[int] = Query(None, description="Año para filtrar (ej: 2024)")
 ):
-    return get_location_details(latitude, longitude)
+    return get_location_details(latitude, longitude, year)

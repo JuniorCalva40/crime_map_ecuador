@@ -17,6 +17,7 @@ export interface MapProps {
     ageRange: [number, number];
     gender: string;
     weapon: string;
+    year: string;
   };
 }
 
@@ -26,12 +27,20 @@ interface IncidentDetail {
   probable_cause: string;
   date: string;
   gender: string;
+  age: number;
 }
 
 interface PopupDetails {
-  total_crimes: number;
   details: IncidentDetail[];
 }
+
+const createLoadingPopupContent = () => `
+  <div class="p-3">
+    <div class="flex items-center justify-center">
+      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+    </div>
+  </div>
+`;
 
 const HeatmapLayer = React.memo(
   ({
@@ -42,7 +51,6 @@ const HeatmapLayer = React.memo(
     onPointSelect?: (coordinates: [number, number]) => void;
   }) => {
     const map = useMap();
-    const [markers, setMarkers] = useState<L.Marker[]>([]);
     const [showMarkers, setShowMarkers] = useState(false);
 
     useEffect(() => {
@@ -65,125 +73,89 @@ const HeatmapLayer = React.memo(
 
       heatLayer.addTo(map);
 
-      const createPopupContent = (details: PopupDetails | null) => {
-        if (!details) {
-          return `
-            <div class="p-3 text-red-500">
-              No se pudieron cargar los detalles del incidente
-            </div>
-          `;
-        }
+      // Creamos los marcadores solo una vez y los mantenemos ocultos inicialmente
+      const newMarkers = data.map(([lat, lng]) => {
+        const marker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div class="marker-pin bg-red-500 w-3 h-3 rounded-full"></div>',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+          }),
+        });
 
-        return `
-          <div class="p-3 space-y-2">
-            <div class="font-semibold text-sm mb-2">
-              Total de incidentes: ${details.total_crimes}
-            </div>
-            ${details.details
-              .map(
-                (incident: IncidentDetail) => `
-              <div class="border-t pt-2">
-                <div class="flex items-center gap-2 text-sm">
-                  <span>Fecha: ${incident.date}</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm">
-                  <span>Género: ${incident.gender}</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm">
-                  <span>Motivo: ${incident.motivation}</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm">
-                  <span>Arma: ${incident.weapon_type}</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm">
-                  <span>Causa probable: ${incident.probable_cause}</span>
-                </div>
+        // Configuramos el evento click aquí pero no añadimos el marcador al mapa todavía
+        marker.on('click', async () => {
+          // Mostrar el popup con el loader primero
+          const loadingPopup = L.popup()
+            .setLatLng([lat, lng])
+            .setContent(createLoadingPopupContent())
+            .openOn(map);
+
+          try {
+            const response = await fetch(
+              `http://localhost:8000/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
+            );
+            const details = await response.json();
+
+            // Actualizar el contenido del popup con los detalles
+            loadingPopup.setContent(createPopupContent(details));
+
+            loadingPopup.getElement()?.addEventListener('click', (event) => {
+              const target = event.target as HTMLElement;
+              if (target.classList.contains('select-point')) {
+                onPointSelect?.([lat, lng]);
+                map.closePopup(loadingPopup);
+              }
+            });
+          } catch (error) {
+            console.error('Error al cargar los detalles:', error);
+            loadingPopup.setContent(`
+              <div class="p-3 text-red-500">
+                Error al cargar los detalles del incidente
               </div>
-            `
-              )
-              .join('')}
-          </div>
-        `;
-      };
+            `);
+          }
+        });
 
-      const createLoadingPopupContent = () => {
-        return `
-          <div class="p-4 flex justify-center items-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          </div>
-        `;
-      };
+        return marker;
+      });
 
-      if (!markers.length) {
-        const newMarkers = data.map(([lat, lng]) => {
-          const marker = L.marker([lat, lng], {
-            icon: L.divIcon({
-              className: 'custom-div-icon',
-              html: '<div class="marker-pin bg-red-500 w-3 h-3 rounded-full"></div>',
-              iconSize: [12, 12],
-              iconAnchor: [6, 6],
-            }),
-          });
+      // Función para actualizar la visibilidad de los marcadores
+      const updateMarkerVisibility = () => {
+        const currentZoom = map.getZoom();
+        const shouldShowMarkers = currentZoom > 11;
 
-          marker.on('click', async () => {
-            // Mostrar el popup con el loader primero
-            const loadingPopup = L.popup()
-              .setLatLng([lat, lng])
-              .setContent(createLoadingPopupContent())
-              .openOn(map);
-
-            try {
-              const response = await fetch(
-                `http://localhost:8000/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
-              );
-              const details = await response.json();
-
-              // Actualizar el contenido del popup con los detalles
-              loadingPopup.setContent(createPopupContent(details));
-
-              loadingPopup.getElement()?.addEventListener('click', (event) => {
-                const target = event.target as HTMLElement;
-                if (target.classList.contains('select-point')) {
-                  onPointSelect?.([lat, lng]);
-                  map.closePopup(loadingPopup);
-                }
-              });
-            } catch (error) {
-              console.error('Error al cargar los detalles:', error);
-              loadingPopup.setContent(`
-                <div class="p-3 text-red-500">
-                  Error al cargar los detalles del incidente
-                </div>
-              `);
+        if (shouldShowMarkers !== showMarkers) {
+          setShowMarkers(shouldShowMarkers);
+          newMarkers.forEach((marker) => {
+            if (shouldShowMarkers) {
+              marker.addTo(map);
+            } else {
+              marker.remove();
             }
           });
+        }
+      };
 
-          return marker;
-        });
-        setMarkers(newMarkers);
-      }
+      // Actualizamos la visibilidad inicial
+      updateMarkerVisibility();
 
-      map.on('zoomend', () => {
-        const currentZoom = map.getZoom();
-        setShowMarkers(currentZoom > 13);
-      });
+      // Manejador de evento de zoom
+      const handleZoom = () => {
+        requestAnimationFrame(updateMarkerVisibility);
+      };
+
+      map.on('zoomend', handleZoom);
+      map.on('zooming', handleZoom);
 
       return () => {
         heatLayer.remove();
-        markers.forEach((marker) => marker.remove());
+        newMarkers.forEach((marker) => marker.remove());
+        map.off('zoomend', handleZoom);
+        map.off('zooming', handleZoom);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, map, onPointSelect]);
-
-    useEffect(() => {
-      markers.forEach((marker) => {
-        if (showMarkers) {
-          marker.addTo(map);
-        } else {
-          marker.remove();
-        }
-      });
-    }, [showMarkers, markers, map]);
 
     return null;
   }
@@ -208,6 +180,7 @@ export default function Map({ filters }: MapProps) {
         params.append('age_max', filters.ageRange[1].toString());
         if (filters.gender) params.append('gender', filters.gender);
         if (filters.weapon) params.append('weapon', filters.weapon);
+        if (filters.year) params.append('year', filters.year);
 
         const response = await fetch(
           `http://127.0.0.1:8000/crime-data?${params}`
@@ -313,3 +286,27 @@ function IncidentInfo({
     </div>
   );
 }
+
+const createPopupContent = (details: PopupDetails): string => {
+  return `
+    <div class="p-3">
+      ${details.details
+        .map(
+          (incident: IncidentDetail) => `
+          <div class="mb-2">
+            <div class="flex items-center gap-2 text-sm">
+              <span>Género: ${incident.gender}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span>Edad: ${incident.age}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span>Causa probable: ${incident.probable_cause}</span>
+            </div>
+          </div>
+        `
+        )
+        .join('')}
+    </div>
+  `;
+};
