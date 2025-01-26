@@ -1,9 +1,8 @@
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { useEffect, useState } from 'react';
-import { CrimeData } from '../types/globals';
 import { Box, LoadingOverlay } from '@mantine/core';
 import {
   IconUser,
@@ -11,6 +10,7 @@ import {
   IconMapPinOff,
   IconUsers,
 } from '@tabler/icons-react';
+import { CrimeData } from '../types/globals';
 
 export interface MapProps {
   filters: {
@@ -20,78 +20,174 @@ export interface MapProps {
   };
 }
 
-function HeatmapLayer({ data }: { data: [number, number][] }) {
-  const map = useMap();
-  const [markers, setMarkers] = useState<L.Marker[]>([]);
-  const [showMarkers, setShowMarkers] = useState(false);
+interface IncidentDetail {
+  motivation: string;
+  weapon_type: string;
+  probable_cause: string;
+  date: string;
+  gender: string;
+}
 
-  useEffect(() => {
-    const pointsWithIntensity: [number, number, number][] = data.map(
-      ([lat, lng]) => [lat, lng, 1]
-    );
+interface PopupDetails {
+  total_crimes: number;
+  details: IncidentDetail[];
+}
 
-    const heatLayer = L.heatLayer(pointsWithIntensity, {
-      radius: 16,
-      blur: 9,
-      maxZoom: 13,
-      minOpacity: 0.3,
-      gradient: {
-        0.2: 'blue',
-        0.4: 'cyan',
-        0.6: 'yellow',
-        0.8: 'orange',
-        1.0: 'red',
-      },
-    });
+const HeatmapLayer = React.memo(
+  ({
+    data,
+    onPointSelect,
+  }: {
+    data: [number, number][];
+    onPointSelect?: (coordinates: [number, number]) => void;
+  }) => {
+    const map = useMap();
+    const [markers, setMarkers] = useState<L.Marker[]>([]);
+    const [showMarkers, setShowMarkers] = useState(false);
 
-    const newMarkers = data.map(([lat, lng]) => {
-      const marker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          className: 'custom-div-icon',
-          html: '<div class="marker-pin bg-red-500 w-3 h-3 rounded-full"></div>',
-          iconSize: [12, 12],
-          iconAnchor: [6, 6],
-        }),
+    useEffect(() => {
+      const heatLayer = L.heatLayer(
+        data.map(([lat, lng]) => [lat, lng, 1]),
+        {
+          radius: 16,
+          blur: 9,
+          maxZoom: 13,
+          minOpacity: 0.3,
+          gradient: {
+            0.2: 'blue',
+            0.4: 'cyan',
+            0.6: 'yellow',
+            0.8: 'orange',
+            1.0: 'red',
+          },
+        }
+      );
+
+      heatLayer.addTo(map);
+
+      const createPopupContent = (details: PopupDetails | null) => {
+        if (!details) {
+          return `
+            <div class="p-3 text-red-500">
+              No se pudieron cargar los detalles del incidente
+            </div>
+          `;
+        }
+
+        return `
+          <div class="p-3 space-y-2">
+            <div class="font-semibold text-sm mb-2">
+              Total de incidentes: ${details.total_crimes}
+            </div>
+            ${details.details
+              .map(
+                (incident: IncidentDetail) => `
+              <div class="border-t pt-2">
+                <div class="flex items-center gap-2 text-sm">
+                  <span>Fecha: ${incident.date}</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span>Género: ${incident.gender}</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span>Motivo: ${incident.motivation}</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span>Arma: ${incident.weapon_type}</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span>Causa probable: ${incident.probable_cause}</span>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        `;
+      };
+
+      const createLoadingPopupContent = () => {
+        return `
+          <div class="p-4 flex justify-center items-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        `;
+      };
+
+      if (!markers.length) {
+        const newMarkers = data.map(([lat, lng]) => {
+          const marker = L.marker([lat, lng], {
+            icon: L.divIcon({
+              className: 'custom-div-icon',
+              html: '<div class="marker-pin bg-red-500 w-3 h-3 rounded-full"></div>',
+              iconSize: [12, 12],
+              iconAnchor: [6, 6],
+            }),
+          });
+
+          marker.on('click', async () => {
+            // Mostrar el popup con el loader primero
+            const loadingPopup = L.popup()
+              .setLatLng([lat, lng])
+              .setContent(createLoadingPopupContent())
+              .openOn(map);
+
+            try {
+              const response = await fetch(
+                `http://localhost:8000/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
+              );
+              const details = await response.json();
+
+              // Actualizar el contenido del popup con los detalles
+              loadingPopup.setContent(createPopupContent(details));
+
+              loadingPopup.getElement()?.addEventListener('click', (event) => {
+                const target = event.target as HTMLElement;
+                if (target.classList.contains('select-point')) {
+                  onPointSelect?.([lat, lng]);
+                  map.closePopup(loadingPopup);
+                }
+              });
+            } catch (error) {
+              console.error('Error al cargar los detalles:', error);
+              loadingPopup.setContent(`
+                <div class="p-3 text-red-500">
+                  Error al cargar los detalles del incidente
+                </div>
+              `);
+            }
+          });
+
+          return marker;
+        });
+        setMarkers(newMarkers);
+      }
+
+      map.on('zoomend', () => {
+        const currentZoom = map.getZoom();
+        setShowMarkers(currentZoom > 13);
       });
 
-      marker.bindPopup(`
-        <div class="p-2">
-          <button class="select-point px-2 py-1 bg-blue-500 text-white rounded-md text-sm">
-            Seleccionar
-          </button>
-        </div>
-      `);
+      return () => {
+        heatLayer.remove();
+        markers.forEach((marker) => marker.remove());
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, map, onPointSelect]);
 
-      return marker;
-    });
+    useEffect(() => {
+      markers.forEach((marker) => {
+        if (showMarkers) {
+          marker.addTo(map);
+        } else {
+          marker.remove();
+        }
+      });
+    }, [showMarkers, markers, map]);
 
-    setMarkers(newMarkers);
-
-    map.on('zoomend', () => {
-      const currentZoom = map.getZoom();
-      setShowMarkers(currentZoom > 13);
-    });
-
-    heatLayer.addTo(map);
-
-    return () => {
-      heatLayer.remove();
-      markers.forEach((marker) => marker.remove());
-    };
-  }, [data, map]);
-
-  useEffect(() => {
-    markers.forEach((marker) => {
-      if (showMarkers) {
-        marker.addTo(map);
-      } else {
-        marker.remove();
-      }
-    });
-  }, [showMarkers, markers, map]);
-
-  return null;
-}
+    return null;
+  }
+);
 
 export default function Map({ filters }: MapProps) {
   const [stats, setStats] = useState({
@@ -202,18 +298,15 @@ function IncidentInfo({
         <ul className="space-y-2">
           <li className="flex items-center gap-2">
             <IconUser size={18} stroke={1.5} className="text-gray-600" />
-            <span className="font-bold">Total:</span>{' '}
-            <span className="ml-1">{data.total}</span>
+            <span className="font-bold">Total víctimas: {data.total}</span>
           </li>
           <li className="flex items-center gap-2">
-            <IconMapPin size={18} stroke={1.5} className="text-gray-600" />
-            <span className="font-bold">Con Coordenadas:</span>{' '}
-            <span className="ml-1">{data.withCoordinates}</span>
+            <IconMapPin size={18} stroke={1.5} className="text-green-500" />
+            <span>Con coordenadas: {data.withCoordinates}</span>
           </li>
           <li className="flex items-center gap-2">
-            <IconMapPinOff size={18} stroke={1.5} className="text-gray-600" />
-            <span className="font-bold">Sin Coordenadas:</span>{' '}
-            <span className="ml-1">{data.withoutCoordinates}</span>
+            <IconMapPinOff size={18} stroke={1.5} className="text-yellow-500" />
+            <span>Sin coordenadas: {data.withoutCoordinates}</span>
           </li>
         </ul>
       </div>

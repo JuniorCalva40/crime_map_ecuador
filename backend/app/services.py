@@ -48,4 +48,41 @@ def process_crime_data(gender, weapon, age_min, age_max, year=None):
         "coordinates": coordinates
     }
 
+def get_location_details(latitude, longitude):
+    file_path = "data/crime_data.xlsx"
+    df = pd.read_excel(file_path)
+    
+    # Buscar crímenes en las coordenadas exactas
+    crimes_at_location = df[
+        (df['coordenada_y'] == latitude) & 
+        (df['coordenada_x'] == longitude)
+    ]
+    
+    if crimes_at_location.empty:
+        return {
+            "message": "No se encontraron datos en esta ubicación",
+            "coordenadas_buscadas": {
+                "latitud": latitude,
+                "longitud": longitude
+            }
+        }
+    
+    
+    crimes_list = []
+    for _, crime in crimes_at_location.iterrows():
+        crimes_list.append({
+            "motivation": crime.get('presun_motiva_observada'),
+            "weapon_type": crime.get('arma'),
+            "probable_cause": crime.get('probable_causa_motivada'),
+            "date": crime.get('fecha_infraccion').strftime('%Y-%m-%d') if pd.notna(crime.get('fecha_infraccion')) else None,
+            "gender": crime.get('sexo'),
+            "age": crime.get('edad')
+        })
+    print(crimes_list)
+    return {
+        "total_crimes": len(crimes_at_location),
+        "shown_results": len(crimes_list),
+        "details": crimes_list
+    }
+
    
