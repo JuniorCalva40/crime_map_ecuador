@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './style/global.css';
@@ -7,6 +7,7 @@ import {
   createTheme,
   MantineColorsTuple,
   MantineProvider,
+  LoadingOverlay,
 } from '@mantine/core';
 
 const myColor: MantineColorsTuple = [
@@ -31,7 +32,17 @@ const theme = createTheme({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider defaultColorScheme="dark" theme={theme}>
-      <App />
+      <Suspense
+        fallback={
+          <LoadingOverlay
+            visible={true}
+            zIndex={1000}
+            overlayProps={{ blur: 2 }}
+          />
+        }
+      >
+        <App />
+      </Suspense>
     </MantineProvider>
   </StrictMode>
 );

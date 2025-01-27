@@ -56,7 +56,7 @@ export default function Filters({ onFiltersChange }: FiltersProps) {
     <Paper shadow="sm" p="md" className="h-full" bg="dark.8">
       <Stack>
         <Title order={3} className="text-gray-100">
-          Filtros de Búsqueda
+          Mapa Homicidios Ecuador
         </Title>
 
         <div className="space-y-6">

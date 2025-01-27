@@ -51,7 +51,6 @@ const HeatmapLayer = React.memo(
     onPointSelect?: (coordinates: [number, number]) => void;
   }) => {
     const map = useMap();
-    const [markers, setMarkers] = useState<L.Marker[]>([]);
 
     useEffect(() => {
       const heatLayer = L.heatLayer(
@@ -74,7 +73,7 @@ const HeatmapLayer = React.memo(
       heatLayer.addTo(map);
 
       // Crear marcadores
-      const newMarkers = data.map(([lat, lng]) => {
+      const markers = data.map(([lat, lng]) => {
         const marker = L.marker([lat, lng], {
           icon: L.divIcon({
             className: 'custom-div-icon',
@@ -110,27 +109,35 @@ const HeatmapLayer = React.memo(
         return marker;
       });
 
-      setMarkers(newMarkers);
-
-      // Manejar zoom
       const updateMarkers = () => {
         const zoom = map.getZoom();
-        newMarkers.forEach((marker) => {
-          if (zoom > 11) {
+        const bounds = map.getBounds();
+        const maxVisibleMarkers = 100;
+        let visibleCount = 0;
+
+        markers.forEach((marker) => {
+          const markerLatLng = marker.getLatLng();
+
+          if (
+            zoom > 11 &&
+            bounds.contains(markerLatLng) &&
+            visibleCount < maxVisibleMarkers
+          ) {
             marker.addTo(map);
+            visibleCount++;
           } else {
             marker.remove();
           }
         });
       };
 
-      map.on('zoomend', updateMarkers);
+      map.on('zoomend moveend', updateMarkers);
       updateMarkers();
 
       return () => {
         heatLayer.remove();
-        newMarkers.forEach((marker) => marker.remove());
-        map.off('zoomend', updateMarkers);
+        markers.forEach((marker) => marker.remove());
+        map.off('zoomend moveend', updateMarkers);
       };
     }, [data, map, onPointSelect]);
 

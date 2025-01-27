@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import Map from './components/Map';
+import { useState, Suspense, lazy } from 'react';
 import Filters from './components/Filters';
+
+const Map = lazy(() => import('./components/Map'));
 
 export default function App() {
   const [filters, setFilters] = useState({
@@ -11,12 +12,20 @@ export default function App() {
   });
 
   return (
-    <div className="flex">
-      <div className="w-80">
+    <div className="flex flex-col md:flex-row relative">
+      <div className="w-full md:w-80 h-auto">
         <Filters onFiltersChange={setFilters} />
       </div>
-      <div className="flex-1">
-        <Map filters={filters} />
+      <div className="w-full flex-1">
+        <Suspense
+          fallback={
+            <div className="w-full h-[calc(100vh-320px)] md:h-screen flex items-center justify-center bg-gray-100">
+              <div className="text-lg text-gray-600">Cargando mapa...</div>
+            </div>
+          }
+        >
+          <Map filters={filters} />
+        </Suspense>
       </div>
     </div>
   );
