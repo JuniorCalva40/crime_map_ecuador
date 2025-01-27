@@ -55,9 +55,12 @@ export default function Filters({ onFiltersChange }: FiltersProps) {
   return (
     <Paper shadow="sm" p="md" className="h-full" bg="dark.8">
       <Stack>
-        <Title order={3} className="text-gray-100">
-          Mapa Homicidios Ecuador
-        </Title>
+        <div className="flex items-center justify-center">
+          <img src="/logo_map.webp" alt="Logo" className="w-10 h-10" />
+          <Title order={4} className="text-gray-100">
+            Mapa Homicidios Ecuador
+          </Title>
+        </div>
 
         <div className="space-y-6">
           <Select
