@@ -1,11 +1,4 @@
-import {
-  Select,
-  RangeSlider,
-  Paper,
-  Title,
-  Stack,
-  Button,
-} from '@mantine/core';
+import { Select, RangeSlider, Paper, Title, Button } from '@mantine/core';
 import {
   IconUsers,
   IconSword,
@@ -13,6 +6,7 @@ import {
   IconCalendar,
 } from '@tabler/icons-react';
 import { useState } from 'react';
+import { ModalInfo } from './ModalInfo';
 
 interface FiltersProps {
   onFiltersChange: (filters: {
@@ -54,100 +48,104 @@ export default function Filters({ onFiltersChange }: FiltersProps) {
 
   return (
     <Paper shadow="sm" p="md" className="h-full" bg="dark.8">
-      <Stack>
-        <div className="flex items-center justify-center">
-          <img src="/logo_map.webp" alt="Logo" className="w-10 h-10" />
-          <Title order={4} className="text-gray-100">
-            Mapa Homicidios Ecuador
-          </Title>
-        </div>
-
-        <div className="space-y-6">
-          <Select
-            color="myColor"
-            value={year}
-            onChange={handleYearChange}
-            label="Año"
-            placeholder="Seleccionar año"
-            data={[
-              { value: '', label: 'Todos los años' },
-              { value: '2014', label: '2014' },
-              { value: '2015', label: '2015' },
-              { value: '2016', label: '2016' },
-              { value: '2017', label: '2017' },
-              { value: '2018', label: '2018' },
-              { value: '2019', label: '2019' },
-              { value: '2020', label: '2020' },
-              { value: '2021', label: '2021' },
-              { value: '2022', label: '2022' },
-              { value: '2023', label: '2023' },
-              { value: '2024', label: '2024' },
-            ]}
-            leftSection={<IconCalendar size="1rem" className="text-gray-400" />}
-          />
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-200 block">
-              Rango de Edad
-            </label>
-            <RangeSlider
-              color="myColor"
-              min={0}
-              max={100}
-              value={localAgeRange}
-              onChange={setLocalAgeRange}
-              marks={[
-                { value: 0, label: '0' },
-                { value: 50, label: '50' },
-                { value: 100, label: '100+' },
-              ]}
-            />
-            <div className="w-full mt-4">
-              <Button
-                size="sm"
-                variant="light"
-                color="myColor"
-                onClick={handleApplyAgeRange}
-                leftSection={<IconFilter size={16} />}
-                fullWidth
-                className="w-full mt-6"
-              >
-                Aplicar Rango
-              </Button>
-            </div>
+      <div className="h-full flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-center">
+            <img src="/logo_map.webp" alt="Logo" className="w-10 h-10" />
+            <Title order={4} className="text-gray-100">
+              Mapa Homicidios Ecuador
+            </Title>
           </div>
 
-          <Select
-            color="myColor"
-            value={gender}
-            onChange={handleGenderChange}
-            label="Género"
-            placeholder="Seleccionar género"
-            data={[
-              { value: '', label: 'Todos' },
-              { value: 'male', label: 'Hombre' },
-              { value: 'female', label: 'Mujer' },
-            ]}
-            leftSection={<IconUsers size="1rem" className="text-gray-400" />}
-          />
+          <div className="space-y-6">
+            <Select
+              color="myColor"
+              value={year}
+              onChange={handleYearChange}
+              label="Año"
+              placeholder="Seleccionar año"
+              data={[
+                { value: '2014', label: '2014' },
+                { value: '2015', label: '2015' },
+                { value: '2016', label: '2016' },
+                { value: '2017', label: '2017' },
+                { value: '2018', label: '2018' },
+                { value: '2019', label: '2019' },
+                { value: '2020', label: '2020' },
+                { value: '2021', label: '2021' },
+                { value: '2022', label: '2022' },
+                { value: '2023', label: '2023' },
+                { value: '2024', label: '2024' },
+              ]}
+              leftSection={
+                <IconCalendar size="1rem" className="text-gray-400" />
+              }
+            />
 
-          <Select
-            color="myColor"
-            value={weapon}
-            onChange={handleWeaponChange}
-            label="Tipo de Arma"
-            placeholder="Seleccionar arma"
-            data={[
-              { value: '', label: 'Todas las armas' },
-              { value: 'firearm', label: 'Arma de fuego' },
-              { value: 'knife', label: 'Arma blanca' },
-              { value: 'constriction', label: 'Constricción' },
-              { value: 'others', label: 'Otro tipo' },
-            ]}
-            leftSection={<IconSword size="1rem" className="text-gray-400" />}
-          />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-200 block">
+                Rango de Edad
+              </label>
+              <RangeSlider
+                color="myColor"
+                min={0}
+                max={100}
+                value={localAgeRange}
+                onChange={setLocalAgeRange}
+                marks={[
+                  { value: 0, label: '0' },
+                  { value: 50, label: '50' },
+                  { value: 100, label: '100+' },
+                ]}
+              />
+              <div className="w-full mt-4">
+                <Button
+                  size="sm"
+                  variant="light"
+                  color="myColor"
+                  onClick={handleApplyAgeRange}
+                  leftSection={<IconFilter size={16} />}
+                  fullWidth
+                  className="w-full mt-6"
+                >
+                  Aplicar Rango
+                </Button>
+              </div>
+            </div>
+
+            <Select
+              color="myColor"
+              value={gender}
+              onChange={handleGenderChange}
+              label="Género"
+              placeholder="Seleccionar género"
+              data={[
+                { value: '', label: 'Todos' },
+                { value: 'male', label: 'Hombre' },
+                { value: 'female', label: 'Mujer' },
+              ]}
+              leftSection={<IconUsers size="1rem" className="text-gray-400" />}
+            />
+
+            <Select
+              color="myColor"
+              value={weapon}
+              onChange={handleWeaponChange}
+              label="Tipo de Arma"
+              placeholder="Seleccionar arma"
+              data={[
+                { value: '', label: 'Todas las armas' },
+                { value: 'firearm', label: 'Arma de fuego' },
+                { value: 'knife', label: 'Arma blanca' },
+                { value: 'constriction', label: 'Constricción' },
+                { value: 'others', label: 'Otro tipo' },
+              ]}
+              leftSection={<IconSword size="1rem" className="text-gray-400" />}
+            />
+          </div>
         </div>
-      </Stack>
+        <ModalInfo />
+      </div>
     </Paper>
   );
 }

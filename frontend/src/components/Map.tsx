@@ -273,7 +273,7 @@ function IncidentInfo({
 
 const createPopupContent = (details: PopupDetails): string => {
   return `
-    <div class="p-3">
+    <div class="p-3 max-w-lg">
       <div class="mb-3 text-sm font-semibold text-gray-700">
         Total de incidentes: ${details.details.length}
       </div>
@@ -286,32 +286,32 @@ const createPopupContent = (details: PopupDetails): string => {
             </div>
             <div class="space-y-1.5">
               <div class="flex items-center gap-2 text-sm">
-                <span class="font-medium">Fecha:</span>
+                <span class="font-bold">Fecha:</span>
                 <span>${new Date(incident.date).toLocaleDateString(
                   'es-ES'
                 )}</span>
               </div>
               <div class="flex items-center gap-2 text-sm">
-                <span class="font-medium">Género:</span>
+                <span class="font-bold">Género:</span>
                 <span>${incident.gender.toLowerCase()}</span>
               </div>
               <div class="flex items-center gap-2 text-sm">
-                <span class="font-medium">Edad:</span>
+                <span class="font-bold">Edad:</span>
                 <span>${
                   incident.age === 0 ? 'No definido' : `${incident.age} años`
                 }</span>
               </div>
               <div class="flex items-center gap-2 text-sm">
-                <span class="font-medium">Motivación:</span>
-                <span>${incident.motivation.toLowerCase()}</span>
+                <span class="font-bold">Motivación:</span>
+                <span class="break-words">${incident.motivation.toLowerCase()}</span>
               </div>
               <div class="flex items-center gap-2 text-sm">
-                <span class="font-medium">Tipo de arma:</span>
+                <span class="font-bold">Tipo de arma:</span>
                 <span>${incident.weapon_type.toLowerCase()}</span>
               </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span class="font-medium">Causa probable:</span>
-                <span>${incident.probable_cause.toLowerCase()}</span>
+              <div class="flex flex-col gap-1 text-sm">
+                <span class="font-bold">Causa probable:</span>
+                <span class="break-words">${incident.probable_cause.toLowerCase()}</span>
               </div>
             </div>
           </div>

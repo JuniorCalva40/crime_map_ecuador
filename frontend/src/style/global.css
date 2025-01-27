@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
 .leaflet-heat-gradient {
-  background: linear-gradient(to right, blue, lime, yellow, orange, red);
+  background: linear-gradient(
+    to right,
+    rgb(0, 187, 255),
+    cyan,
+    yellow,
+    orange,
+    red
+  );
 }
