@@ -2,10 +2,6 @@ import pandas as pd
 import functools
 
 
-def get_file_path(year):
-    if year == 2024:
-        return "data/crime_data_2024.xlsx"
-    return "data/data_crime_total.xlsx"
 
 @functools.lru_cache(maxsize=2)
 def load_cached_data(file_path):
@@ -19,7 +15,7 @@ def load_cached_data(file_path):
     return df
 
 def process_crime_data(gender, weapon, age_min, age_max, year=None):
-    file_path = get_file_path(year)
+    file_path = "data/data_crime_ecuador.xlsx"
     df = load_cached_data(file_path)
     
     # Aplicar filtros usando query() que es más rápido para múltiples condiciones
@@ -42,7 +38,6 @@ def process_crime_data(gender, weapon, age_min, age_max, year=None):
     
     total_victims = len(filtered_df)
     
-    # Optimizar el filtrado de coordenadas válidas
     valid_coordinates = filtered_df[
         filtered_df['coordenada_y'].notna() & 
         filtered_df['coordenada_x'].notna() & 
@@ -60,11 +55,11 @@ def process_crime_data(gender, weapon, age_min, age_max, year=None):
         "coordinates": valid_coordinates[['coordenada_y', 'coordenada_x']].values.tolist()
     }
 
-def get_location_details(latitude, longitude, year=None):
-    file_path = get_file_path(year)
+def get_location_details(latitude, longitude):
+    file_path = "data/data_crime_ecuador.xlsx"
     df = load_cached_data(file_path)
     
-    # Usar query() para búsqueda más rápida
+    
     crimes_at_location = df.query(f"coordenada_y == {latitude} and coordenada_x == {longitude}")
     
     if crimes_at_location.empty:
@@ -76,7 +71,6 @@ def get_location_details(latitude, longitude, year=None):
             }
         }
     
-    # Optimizar la creación de la lista de crímenes
     crimes_list = crimes_at_location.apply(
         lambda x: {
             "motivation": x['presun_motiva_observada'],

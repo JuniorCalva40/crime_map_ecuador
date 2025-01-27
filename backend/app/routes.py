@@ -6,6 +6,7 @@ from app.services import process_crime_data, get_location_details
 class WeaponType(str, Enum):
     knife = "ARMA BLANCA"
     firearm = "ARMA DE FUEGO"
+    constriction = "CONSTRICTORA"
     others = "OTROS"
 
 class SexType(str, Enum):
@@ -29,6 +30,7 @@ async def get_crime_data(
         weapon_map = {
             "knife": "ARMA BLANCA",
             "firearm": "ARMA DE FUEGO",
+            "constriction": "CONSTRICTORA",
             "others": "OTROS"
         }
         weapon_value = weapon_map.get(weapon.lower())
@@ -47,7 +49,6 @@ async def get_crime_data(
 @router.get("/crime-data/details-by-location")
 async def get_crime_details_by_location(
     latitude: float = Query(..., description="Latitud de la ubicación"),
-    longitude: float = Query(..., description="Longitud de la ubicación"),
-    year: Optional[int] = Query(None, description="Año para filtrar (ej: 2024)")
+    longitude: float = Query(..., description="Longitud de la ubicación")
 ):
-    return get_location_details(latitude, longitude, year)
+    return get_location_details(latitude, longitude)

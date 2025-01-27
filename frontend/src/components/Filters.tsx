@@ -90,7 +90,7 @@ export default function Filters({ onFiltersChange }: FiltersProps) {
             <RangeSlider
               color="myColor"
               min={0}
-              max={80}
+              max={100}
               value={localAgeRange}
               onChange={setLocalAgeRange}
               marks={[
@@ -138,7 +138,8 @@ export default function Filters({ onFiltersChange }: FiltersProps) {
               { value: '', label: 'Todas las armas' },
               { value: 'firearm', label: 'Arma de fuego' },
               { value: 'knife', label: 'Arma blanca' },
-              { value: 'other', label: 'Otro tipo' },
+              { value: 'constriction', label: 'Constricción' },
+              { value: 'others', label: 'Otro tipo' },
             ]}
             leftSection={<IconSword size="1rem" className="text-gray-400" />}
           />
