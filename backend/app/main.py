@@ -1,16 +1,22 @@
 from fastapi import FastAPI
 from app.routes import router
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = FastAPI()
 
-# Configuración CORS
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+# Config CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Origen de tu frontend
+    allow_origins=[frontend_url],  
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],  # Permite todos los encabezados
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 app.include_router(router)
 

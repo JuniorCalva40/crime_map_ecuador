@@ -93,7 +93,9 @@ const HeatmapLayer = React.memo(
 
           try {
             const response = await fetch(
-              `http://localhost:8000/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
+              `${
+                import.meta.env.VITE_API_BACKEND
+              }/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
             );
             if (!response.ok) throw new Error('Network response was not ok');
             const details = await response.json();
@@ -167,7 +169,7 @@ export default function Map({ filters }: MapProps) {
         if (filters.year) params.append('year', filters.year);
 
         const response = await fetch(
-          `http://127.0.0.1:8000/crime-data?${params}`
+          `${import.meta.env.VITE_API_BACKEND}/crime-data?${params}`
         );
         const data: CrimeData = await response.json();
         setCrimeData(data);
