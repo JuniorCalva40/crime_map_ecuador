@@ -51,7 +51,7 @@ const HeatmapLayer = React.memo(
     onPointSelect?: (coordinates: [number, number]) => void;
   }) => {
     const map = useMap();
-    const [showMarkers, setShowMarkers] = useState(false);
+    const [markers, setMarkers] = useState<L.Marker[]>([]);
 
     useEffect(() => {
       const heatLayer = L.heatLayer(
@@ -73,7 +73,7 @@ const HeatmapLayer = React.memo(
 
       heatLayer.addTo(map);
 
-      // Creamos los marcadores solo una vez y los mantenemos ocultos inicialmente
+      // Crear marcadores
       const newMarkers = data.map(([lat, lng]) => {
         const marker = L.marker([lat, lng], {
           icon: L.divIcon({
@@ -84,10 +84,10 @@ const HeatmapLayer = React.memo(
           }),
         });
 
-        // Configuramos el evento click aquí pero no añadimos el marcador al mapa todavía
-        marker.on('click', async () => {
-          // Mostrar el popup con el loader primero
-          const loadingPopup = L.popup()
+        marker.on('click', async (e) => {
+          L.DomEvent.stopPropagation(e);
+
+          const popup = L.popup()
             .setLatLng([lat, lng])
             .setContent(createLoadingPopupContent())
             .openOn(map);
@@ -96,64 +96,41 @@ const HeatmapLayer = React.memo(
             const response = await fetch(
               `http://localhost:8000/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
             );
+            if (!response.ok) throw new Error('Network response was not ok');
             const details = await response.json();
-
-            // Actualizar el contenido del popup con los detalles
-            loadingPopup.setContent(createPopupContent(details));
-
-            loadingPopup.getElement()?.addEventListener('click', (event) => {
-              const target = event.target as HTMLElement;
-              if (target.classList.contains('select-point')) {
-                onPointSelect?.([lat, lng]);
-                map.closePopup(loadingPopup);
-              }
-            });
+            popup.setContent(createPopupContent(details));
           } catch (error) {
-            console.error('Error al cargar los detalles:', error);
-            loadingPopup.setContent(`
-              <div class="p-3 text-red-500">
-                Error al cargar los detalles del incidente
-              </div>
-            `);
+            console.error('Error:', error);
+            popup.setContent(
+              '<div class="p-3 text-red-500">Error al cargar los detalles</div>'
+            );
           }
         });
 
         return marker;
       });
 
-      // Función para actualizar la visibilidad de los marcadores
-      const updateMarkerVisibility = () => {
-        const currentZoom = map.getZoom();
-        const shouldShowMarkers = currentZoom > 11;
+      setMarkers(newMarkers);
 
-        if (shouldShowMarkers !== showMarkers) {
-          setShowMarkers(shouldShowMarkers);
-          newMarkers.forEach((marker) => {
-            if (shouldShowMarkers) {
-              marker.addTo(map);
-            } else {
-              marker.remove();
-            }
-          });
-        }
+      // Manejar zoom
+      const updateMarkers = () => {
+        const zoom = map.getZoom();
+        newMarkers.forEach((marker) => {
+          if (zoom > 11) {
+            marker.addTo(map);
+          } else {
+            marker.remove();
+          }
+        });
       };
 
-      // Actualizamos la visibilidad inicial
-      updateMarkerVisibility();
-
-      // Manejador de evento de zoom
-      const handleZoom = () => {
-        requestAnimationFrame(updateMarkerVisibility);
-      };
-
-      map.on('zoomend', handleZoom);
-      map.on('zooming', handleZoom);
+      map.on('zoomend', updateMarkers);
+      updateMarkers();
 
       return () => {
         heatLayer.remove();
         newMarkers.forEach((marker) => marker.remove());
-        map.off('zoomend', handleZoom);
-        map.off('zooming', handleZoom);
+        map.off('zoomend', updateMarkers);
       };
     }, [data, map, onPointSelect]);
 
@@ -290,18 +267,45 @@ function IncidentInfo({
 const createPopupContent = (details: PopupDetails): string => {
   return `
     <div class="p-3">
+      <div class="mb-3 text-sm font-semibold text-gray-700">
+        Total de incidentes: ${details.details.length}
+      </div>
       ${details.details
         .map(
-          (incident: IncidentDetail) => `
-          <div class="mb-2">
-            <div class="flex items-center gap-2 text-sm">
-              <span>Género: ${incident.gender}</span>
+          (incident: IncidentDetail, index: number) => `
+          <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div class="mb-2 font-semibold text-blue-600 border-b pb-1">
+              Incidente #${index + 1}
             </div>
-            <div class="flex items-center gap-2 text-sm">
-              <span>Edad: ${incident.age}</span>
-            </div>
-            <div class="flex items-center gap-2 text-sm">
-              <span>Causa probable: ${incident.probable_cause}</span>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2 text-sm">
+                <span class="font-medium">Fecha:</span>
+                <span>${new Date(incident.date).toLocaleDateString(
+                  'es-ES'
+                )}</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm">
+                <span class="font-medium">Género:</span>
+                <span>${incident.gender.toLowerCase()}</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm">
+                <span class="font-medium">Edad:</span>
+                <span>${
+                  incident.age === 0 ? 'No definido' : `${incident.age} años`
+                }</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm">
+                <span class="font-medium">Motivación:</span>
+                <span>${incident.motivation.toLowerCase()}</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm">
+                <span class="font-medium">Tipo de arma:</span>
+                <span>${incident.weapon_type.toLowerCase()}</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm">
+                <span class="font-medium">Causa probable:</span>
+                <span>${incident.probable_cause.toLowerCase()}</span>
+              </div>
             </div>
           </div>
         `

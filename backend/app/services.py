@@ -1,4 +1,5 @@
 import pandas as pd
+import functools
 
 
 def get_file_path(year):
@@ -6,64 +7,65 @@ def get_file_path(year):
         return "data/crime_data_2024.xlsx"
     return "data/data_crime_total.xlsx"
 
+@functools.lru_cache(maxsize=2)
+def load_cached_data(file_path):
+    columns_needed = ['fecha_infraccion', 'coordenada_y', 'coordenada_x', 'sexo', 'arma', 'edad',
+                     'presun_motiva_observada', 'probable_causa_motivada']
+    df = pd.read_excel(file_path, usecols=columns_needed)
+    
+    # Preprocesar todas las conversiones de una vez
+    df['fecha_infraccion'] = pd.to_datetime(df['fecha_infraccion'], format='%Y-%m-%d', errors='coerce')
+    df[['coordenada_y', 'coordenada_x']] = df[['coordenada_y', 'coordenada_x']].apply(pd.to_numeric, errors='coerce')
+    return df
+
 def process_crime_data(gender, weapon, age_min, age_max, year=None):
-    print(gender, weapon, age_min, age_max, year)
     file_path = get_file_path(year)
-    df = pd.read_excel(file_path)
-
-    # Convertir fecha_infraccion a datetime
-    df['fecha_infraccion'] = pd.to_datetime(df['fecha_infraccion'], errors='coerce')
-    df['coordenada_y'] = pd.to_numeric(df['coordenada_y'], errors='coerce')
-    df['coordenada_x'] = pd.to_numeric(df['coordenada_x'], errors='coerce')
-
-    # Aplicar filtros al DataFrame completo
-    filtered_df = df.copy()
+    df = load_cached_data(file_path)
+    
+    # Aplicar filtros usando query() que es más rápido para múltiples condiciones
+    query_conditions = []
     if gender:
-        filtered_df = filtered_df[filtered_df['sexo'] == gender]
+        query_conditions.append(f"sexo == '{gender}'")
     if weapon:
-        filtered_df = filtered_df[filtered_df['arma'] == weapon]
+        query_conditions.append(f"arma == '{weapon}'")
     if age_min:
-        filtered_df = filtered_df[filtered_df['edad'] >= age_min]
+        query_conditions.append(f"edad >= {age_min}")
     if age_max:
-        filtered_df = filtered_df[filtered_df['edad'] <= age_max]
+        query_conditions.append(f"edad <= {age_max}")
     if year:
-        filtered_df = filtered_df[filtered_df['fecha_infraccion'].dt.year == year]
+        query_conditions.append(f"fecha_infraccion.dt.year == {year}")
+    
+    if query_conditions:
+        filtered_df = df.query(' and '.join(query_conditions))
+    else:
+        filtered_df = df
     
     total_victims = len(filtered_df)
     
-    # Filtrar coordenadas válidas (no nulas y no 0,0)
+    # Optimizar el filtrado de coordenadas válidas
     valid_coordinates = filtered_df[
-        (filtered_df['coordenada_y'].notna()) & 
-        (filtered_df['coordenada_x'].notna()) & 
+        filtered_df['coordenada_y'].notna() & 
+        filtered_df['coordenada_x'].notna() & 
         ((filtered_df['coordenada_y'] != 0) | (filtered_df['coordenada_x'] != 0))
     ]
     
     victims_with_coordinates = len(valid_coordinates)
-    victims_without_coordinates = total_victims - victims_with_coordinates
-
-    print()
-
-    # Obtener solo las coordenadas válidas
-    coordinates = valid_coordinates[['coordenada_y', 'coordenada_x']].values.tolist()
-
+    
     return {
         "statistics": {
             "total_victims": total_victims,
             "victims_with_coordinates": victims_with_coordinates,
-            "victims_without_coordinates": victims_without_coordinates
+            "victims_without_coordinates": total_victims - victims_with_coordinates
         },
-        "coordinates": coordinates
+        "coordinates": valid_coordinates[['coordenada_y', 'coordenada_x']].values.tolist()
     }
 
 def get_location_details(latitude, longitude, year=None):
     file_path = get_file_path(year)
-    df = pd.read_excel(file_path)
+    df = load_cached_data(file_path)
     
-    # Buscar crímenes en las coordenadas exactas
-    crimes_at_location = df[
-        (df['coordenada_y'] == latitude) & 
-        (df['coordenada_x'] == longitude)
-    ]
+    # Usar query() para búsqueda más rápida
+    crimes_at_location = df.query(f"coordenada_y == {latitude} and coordenada_x == {longitude}")
     
     if crimes_at_location.empty:
         return {
@@ -74,18 +76,18 @@ def get_location_details(latitude, longitude, year=None):
             }
         }
     
+    # Optimizar la creación de la lista de crímenes
+    crimes_list = crimes_at_location.apply(
+        lambda x: {
+            "motivation": x['presun_motiva_observada'],
+            "weapon_type": x['arma'],
+            "probable_cause": x['probable_causa_motivada'],
+            "date": x['fecha_infraccion'].strftime('%Y-%m-%d') if pd.notna(x['fecha_infraccion']) else None,
+            "gender": x['sexo'],
+            "age": x['edad']
+        }, axis=1
+    ).tolist()
     
-    crimes_list = []
-    for _, crime in crimes_at_location.iterrows():
-        crimes_list.append({
-            "motivation": crime.get('presun_motiva_observada'),
-            "weapon_type": crime.get('arma'),
-            "probable_cause": crime.get('probable_causa_motivada'),
-            "date": crime.get('fecha_infraccion').strftime('%Y-%m-%d') if pd.notna(crime.get('fecha_infraccion')) else None,
-            "gender": crime.get('sexo'),
-            "age": crime.get('edad')
-        })
-    print(crimes_list)
     return {
         "total_crimes": len(crimes_at_location),
         "shown_results": len(crimes_list),
