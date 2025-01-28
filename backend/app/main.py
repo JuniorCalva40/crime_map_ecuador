@@ -8,7 +8,7 @@ load_dotenv()
 
 app = FastAPI()
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:4173")
 
 # Config CORS
 app.add_middleware(
