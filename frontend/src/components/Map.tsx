@@ -9,6 +9,8 @@ import {
   IconMapPin,
   IconMapPinOff,
   IconUsers,
+  IconX,
+  IconChartBar,
 } from '@tabler/icons-react';
 import { CrimeData } from '../types/globals';
 
@@ -218,16 +220,35 @@ export default function Map({ filters }: MapProps) {
 }
 
 function Leyenda() {
+  const [isVisible, setIsVisible] = useState(true);
+
   return (
-    <div className="absolute bottom-8 right-8 p-2.5 bg-white rounded-md shadow-lg z-[1000]">
-      <div className="text-sm mb-1.5 text-center text-gray-700">
-        Intensidad de Incidentes
-      </div>
-      <div className="w-50 h-5 rounded leaflet-heat-gradient" />
-      <div className="flex justify-between text-xs mt-1.5 text-gray-700">
-        <span>Bajo</span>
-        <span>Alto</span>
-      </div>
+    <div className="absolute bottom-8 right-8 z-[1000]">
+      {isVisible ? (
+        <div className="relative p-2.5 bg-white rounded-md shadow-lg">
+          <button
+            onClick={() => setIsVisible(false)}
+            className="absolute -top-2 -right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
+          >
+            <IconX size={16} className="text-gray-600" />
+          </button>
+          <div className="text-sm mb-1.5 text-center text-gray-700">
+            Intensidad de Incidentes
+          </div>
+          <div className="w-50 h-5 rounded leaflet-heat-gradient" />
+          <div className="flex justify-between text-xs mt-1.5 text-gray-700">
+            <span>Bajo</span>
+            <span>Alto</span>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsVisible(true)}
+          className="p-2 bg-white rounded-md shadow-lg hover:bg-gray-100"
+        >
+          <IconChartBar size={20} className="text-gray-600" />
+        </button>
+      )}
     </div>
   );
 }
@@ -243,32 +264,55 @@ function IncidentInfo({
   };
   isLoading: boolean;
 }) {
+  const [isVisible, setIsVisible] = useState(true);
+
   if (isLoading) {
     return null;
   }
 
   return (
-    <div className="absolute top-8 right-8 p-4 bg-white rounded-md shadow-lg z-[1000]">
-      <div className="text-sm text-gray-700">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <IconUsers size={22} stroke={1.5} />
-          <h3 className="font-semibold text-base">Resumen de Incidentes</h3>
+    <div className="absolute top-8 right-8 z-[1000]">
+      {isVisible ? (
+        <div className="relative p-4 bg-white rounded-md shadow-lg">
+          <button
+            onClick={() => setIsVisible(false)}
+            className="absolute -top-2 -right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
+          >
+            <IconX size={16} className="text-gray-600" />
+          </button>
+          <div className="text-sm text-gray-700">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <IconUsers size={22} stroke={1.5} />
+              <h3 className="font-semibold text-base">Resumen de Incidentes</h3>
+            </div>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2">
+                <IconUser size={18} stroke={1.5} className="text-gray-600" />
+                <span className="font-bold">Total víctimas: {data.total}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <IconMapPin size={18} stroke={1.5} className="text-green-500" />
+                <span>Con coordenadas: {data.withCoordinates}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <IconMapPinOff
+                  size={18}
+                  stroke={1.5}
+                  className="text-yellow-500"
+                />
+                <span>Sin coordenadas: {data.withoutCoordinates}</span>
+              </li>
+            </ul>
+          </div>
         </div>
-        <ul className="space-y-2">
-          <li className="flex items-center gap-2">
-            <IconUser size={18} stroke={1.5} className="text-gray-600" />
-            <span className="font-bold">Total víctimas: {data.total}</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <IconMapPin size={18} stroke={1.5} className="text-green-500" />
-            <span>Con coordenadas: {data.withCoordinates}</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <IconMapPinOff size={18} stroke={1.5} className="text-yellow-500" />
-            <span>Sin coordenadas: {data.withoutCoordinates}</span>
-          </li>
-        </ul>
-      </div>
+      ) : (
+        <button
+          onClick={() => setIsVisible(true)}
+          className="p-2 bg-white rounded-md shadow-lg hover:bg-gray-100"
+        >
+          <IconUsers size={20} className="text-gray-600" />
+        </button>
+      )}
     </div>
   );
 }
