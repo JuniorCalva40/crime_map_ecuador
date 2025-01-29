@@ -13,7 +13,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col md:flex-row relative">
-      <div className="hidden md:block md:w-80 h-auto">
+      <div className="w-full md:w-80 h-auto">
         <Filters onFiltersChange={setFilters} />
       </div>
       <div className="w-full flex-1">

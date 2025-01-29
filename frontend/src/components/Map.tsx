@@ -11,6 +11,7 @@ import {
   IconUsers,
   IconX,
   IconChartBar,
+  IconArrowUp,
 } from '@tabler/icons-react';
 import { CrimeData } from '../types/globals';
 
@@ -214,13 +215,31 @@ export default function Map({ filters }: MapProps) {
           }}
           isLoading={isLoading}
         />
+        <GoToFilter />
       </MapContainer>
     </Box>
   );
 }
 
+function GoToFilter() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <button
+      onClick={scrollToTop}
+      className="fixed bottom-4 left-4 z-[9999] p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 md:hidden"
+      aria-label="Ir a filtros"
+    >
+      <span>Filtros</span>
+      <IconArrowUp size={18} />
+    </button>
+  );
+}
+
 function Leyenda() {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
 
   return (
     <div className="absolute bottom-8 right-8 z-[1000]">
