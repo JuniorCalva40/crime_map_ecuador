@@ -16,7 +16,7 @@ export default function App() {
       <div className="w-full md:w-80 h-auto">
         <Filters onFiltersChange={setFilters} />
       </div>
-      <div className="w-full flex-1 z-[-1]">
+      <div className="w-full flex-1 ">
         <Suspense
           fallback={
             <div className="w-full h-[calc(100vh-320px)] md:h-screen flex items-center justify-center bg-gray-100">
