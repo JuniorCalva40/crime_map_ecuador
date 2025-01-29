@@ -1,4 +1,5 @@
 import { StrictMode, Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './style/global.css';
@@ -43,6 +44,7 @@ createRoot(document.getElementById('root')!).render(
       >
         <App />
       </Suspense>
+      <Analytics />
     </MantineProvider>
   </StrictMode>
 );
