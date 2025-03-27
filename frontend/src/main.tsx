@@ -10,6 +10,7 @@ import {
   MantineProvider,
   LoadingOverlay,
 } from '@mantine/core';
+import { AppProvider } from './context/AppContext';
 
 const myColor: MantineColorsTuple = [
   '#e5f3ff',
@@ -33,17 +34,19 @@ const theme = createTheme({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider defaultColorScheme="dark" theme={theme}>
-      <Suspense
-        fallback={
-          <LoadingOverlay
-            visible={true}
-            zIndex={1000}
-            overlayProps={{ blur: 2 }}
-          />
-        }
-      >
-        <App />
-      </Suspense>
+      <AppProvider>
+        <Suspense
+          fallback={
+            <LoadingOverlay
+              visible={true}
+              zIndex={1000}
+              overlayProps={{ blur: 2 }}
+            />
+          }
+        >
+          <App />
+        </Suspense>
+      </AppProvider>
       <Analytics />
     </MantineProvider>
   </StrictMode>

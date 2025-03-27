@@ -1,20 +1,13 @@
-import { useState, Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import Filters from './components/Filters';
 
 const Map = lazy(() => import('./components/Map'));
 
 export default function App() {
-  const [filters, setFilters] = useState({
-    ageRange: [0, 100] as [number, number],
-    gender: '',
-    weapon: '',
-    year: '2024',
-  });
-
   return (
     <div className="flex flex-col md:flex-row relative">
       <div className="w-full md:w-80 h-auto">
-        <Filters onFiltersChange={setFilters} />
+        <Filters />
       </div>
       <div className="w-full flex-1 z-[1]">
         <Suspense
@@ -24,7 +17,7 @@ export default function App() {
             </div>
           }
         >
-          <Map filters={filters} />
+          <Map />
         </Suspense>
       </div>
     </div>

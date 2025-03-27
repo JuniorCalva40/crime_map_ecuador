@@ -13,16 +13,8 @@ import {
   IconChartBar,
   IconArrowUp,
 } from '@tabler/icons-react';
-import { CrimeData } from '../types/globals';
-
-export interface MapProps {
-  filters: {
-    ageRange: [number, number];
-    gender: string;
-    weapon: string;
-    year: string;
-  };
-}
+import { getCrimeDataForPreciseLocation } from '../services';
+import { useAppContext } from '../context/AppContext';
 
 interface IncidentDetail {
   motivation: string;
@@ -95,13 +87,7 @@ const HeatmapLayer = React.memo(
             .openOn(map);
 
           try {
-            const response = await fetch(
-              `${
-                import.meta.env.VITE_API_BACKEND
-              }/crime-data/details-by-location?latitude=${lat}&longitude=${lng}`
-            );
-            if (!response.ok) throw new Error('Network response was not ok');
-            const details = await response.json();
+            const details = await getCrimeDataForPreciseLocation(lat,lng)
             popup.setContent(createPopupContent(details));
           } catch (error) {
             console.error('Error:', error);
@@ -150,42 +136,30 @@ const HeatmapLayer = React.memo(
   }
 );
 
-export default function Map({ filters }: MapProps) {
-  const [stats, setStats] = useState({
-    total_victims: 0,
-    victims_with_coordinates: 0,
-    victims_without_coordinates: 0,
-  });
-  const [crimeData, setCrimeData] = useState<CrimeData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+function ZoomControl({ zoom, center }: { zoom: number; center: [number, number] }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [zoom, center, map]);
+
+  return null;
+}
+
+export default function Map() {
+  const {crimeData,stats,filters,isLoading} = useAppContext()
+  const [zoom, setZoom] = useState(7);
+  const defaultCenter: [number, number] = [-1.8312, -78.1834];
+  const [center, setCenter] = useState<[number, number]>(defaultCenter);
+  const [previousProvince, setPreviousProvince] = useState<string>(''); //control focus mapa en caso de cambio
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const params = new URLSearchParams();
-
-        params.append('age_min', filters.ageRange[0].toString());
-        params.append('age_max', filters.ageRange[1].toString());
-        if (filters.gender) params.append('gender', filters.gender);
-        if (filters.weapon) params.append('weapon', filters.weapon);
-        if (filters.year) params.append('year', filters.year);
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BACKEND}/crime-data?${params}`
-        );
-        const data: CrimeData = await response.json();
-        setCrimeData(data);
-        setStats(data.statistics);
-      } catch (error) {
-        console.error('Error al cargar los datos:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [filters]);
+    if (filters.province !== previousProvince) {
+      setZoom(7);
+      setCenter(defaultCenter);
+      setPreviousProvince(filters.province);
+    }
+  }, [filters.province, previousProvince])
 
   return (
     <Box pos="relative" style={{ height: '100vh', width: '100%' }}>
@@ -196,11 +170,12 @@ export default function Map({ filters }: MapProps) {
         loaderProps={{ color: 'myColor', type: 'bars' }}
       />
       <MapContainer
-        center={[-1.8312, -78.1834]}
-        zoom={7}
+        center={center}
+        zoom={zoom}
         scrollWheelZoom={true}
         style={{ height: '100%', width: '100%' }}
       >
+        <ZoomControl zoom={zoom} center={center} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

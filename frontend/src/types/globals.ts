@@ -5,4 +5,11 @@ export interface CrimeData {
     victims_without_coordinates: number;
   };
   coordinates: [number, number][];
+  provinces_resumed: Provincia[]
+}
+
+export interface Provincia {
+  provincia: string;
+  incidencias: number
+  tasa: number
 }
