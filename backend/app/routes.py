@@ -19,6 +19,7 @@ router = APIRouter()
 async def get_crime_data(
     gender: Optional[str] = Query(None, alias="gender"),
     weapon: Optional[str] = Query(None, alias="weapon"),
+    province: Optional[str] = Query(None, alias="province"),
     age_min: Optional[int] = Query(None, alias="age_min"),
     age_max: Optional[int] = Query(None, alias="age_max"),
     year: Optional[int] = Query(None, description="Año para filtrar (ej: 2023)")
@@ -42,7 +43,7 @@ async def get_crime_data(
         }
         gender_value = gender_map.get(gender.lower())
     
-    return process_crime_data(gender_value, weapon_value, age_min, age_max, year)
+    return process_crime_data(gender_value, weapon_value, province, age_min, age_max,year)
 
 
 
