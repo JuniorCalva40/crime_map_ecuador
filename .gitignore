@@ -1,0 +1,9 @@
+DEPLOYMENT.md
+DOKPLOY_CONFIG.md
+docker-compose.override.yml
+docker-compose.dev.yml
+docker-compose.test.yml
+tests/
+.idea/
+*.log
+.env.local
