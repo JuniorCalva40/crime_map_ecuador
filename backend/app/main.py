@@ -12,16 +12,35 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Obtener URL del frontend desde variables de entorno
+
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-# Permitir múltiples orígenes para desarrollo y producción
-allowed_origins = [frontend_url]
 
-# Si estamos en desarrollo, agregar localhost
-if "localhost" not in frontend_url:
-    allowed_origins.append("http://localhost:5173")
-    allowed_origins.append("http://localhost:3000")
+allowed_origins = []
+
+
+if frontend_url:
+    urls = [url.strip() for url in frontend_url.split(',')]
+    allowed_origins.extend(urls)
+
+# for dev
+allowed_origins.extend([
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+])
+
+
+allowed_origins.extend([
+    "https://www.mapacrimenecuador.info",
+    "https://mapacrimenecuador.info",  
+])
+
+
+allowed_origins.extend([
+    "https://crime-map-ecuador.vercel.app",
+    "https://crime-map-ecuador-7f8tn3ywf-juniorcalva40s-projects.vercel.app",
+])
 
 # Config CORS
 app.add_middleware(
